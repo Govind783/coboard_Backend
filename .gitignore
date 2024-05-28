@@ -1,0 +1,38 @@
+# Python virtual environment
+venv/
+
+testENV/
+
+delteBoardemailConfirmation.py
+
+# Compiled Python files
+*.pyc
+
+# Environment variables file
+.env
+
+# Logs
+*.log
+
+# Generated files
+__pycache__/
+
+# Database
+*.db
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore the local configuration (if different from other environments)
+config_local.py
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Specific paths to ignore
+testENV/Lib/site-packages/_distutils_hack
+# Add more paths if needed
