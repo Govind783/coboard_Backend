@@ -1671,7 +1671,3 @@ def handle_disconnect():
         logging.info(f"Client {user_id} disconnected and session {session_id} removed")
     else:
         logging.warning(f"Session {session_id} disconnected but no matching user_id found")
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
