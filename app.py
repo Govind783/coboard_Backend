@@ -58,44 +58,27 @@ editor_collection = db['editorData']
 @app.route("/fetchUsersWorkspaces", methods=["POST"])
 def fetchUsersWorkspaces():
     if request.method == "POST":
-        # print(request.get_json(), "request.get_json()")
         requiredPayload = ["sub"]
         data = request.get_json()
-        # print(data, "data")
         for item in requiredPayload:
             if item not in data.keys():
                 return jsonify({"message": f"{item} was missing", "status": 400})
         try:
-            # print(db["miroUsers"].find_one({"sub": data["sub"]}), 'yessss')
             foundUser = db["miroUsers"].find_one({"sub": data["sub"]})
-
             logging.info(f"Found user for fetch user workspaces: {foundUser}")
             if foundUser:
                 foundUser["_id"] = str(foundUser["_id"])
-                # if foundUser.get("sharedBoard_id"):
-                #     foundUser["sharedBoard_id"] = str(foundUser["sharedBoard_id"])
                 for workspace in foundUser["workspace_details"]:
                     if len(workspace["userBoards"]) > 0:
-
                         for board in workspace["userBoards"]:
                             if board.get("sharedBoard_id"):
                                 board["sharedBoard_id"] = str(board["sharedBoard_id"])
-                return jsonify(
-                    {"message": "bothExist", "status": 200, "data": foundUser}
-                )
-
-                # else:
-                #     return jsonify(
-                #         {"message": "neitherBoardNorWorkSpaceExist", "status": 200}
-                #     )  # user will get to see the onboarding modal
+                return jsonify({"message": "bothExist", "status": 200, "data": foundUser})
             else:
-                return "no use found"
+                return jsonify({"message": "User not found", "status": 404}), 404
         except Exception as error:
-            # there was no user with the given sub
-            logging.error(f"execption bllack operation failed: {error}")
+            logging.error(f"Exception black operation failed: {error}")
             return jsonify({"message": "FAILURE", "status": 400}), 400
-        # return 'govind'
-
 
 @app.route("/userOnBoarding", methods=["POST"])
 def handleUserOnboarding():
