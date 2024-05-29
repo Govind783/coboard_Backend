@@ -22,31 +22,38 @@ from pymongo import UpdateOne
 import threading
 import time
 from werkzeug.utils import secure_filename
-import os
-
 import cloudinary
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 logging.basicConfig(filename="backendPYLogs.log", level=logging.INFO)
 app = Flask(__name__)
-CORS(app, origins=["specify your origin"])
-CORS(app, resources={r"/upload": {"origins": "*"}}, supports_credentials=True)
-client = MongoClient("your connection uri")
-db = client["your db name"]
+cors_origins = os.getenv('CORS_ORIGINS').split(',')
+CORS(app, origins=cors_origins)
+CORS(app, resources={r"/upload": {"origins": os.getenv('CORS_UPLOAD_ORIGINS')}}, supports_credentials=True)
+
+# Setup MongoDB client
+mongo_uri = os.getenv('MONGO_URI')
+client = MongoClient(mongo_uri)
+db = client[os.getenv('MONGO_DB_NAME')]
+
+# Setup Flask-Mail
 mail = Mail(app)
+
+# Setup Flask-SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
-editor_collection = db['collection name of editor']
 
-# NOTE THIS PROJECT IS OPEN SOURCE AND A GREAT STARTER FOR ANYONE to build a realtime collaborative canvas with a block based eeditor 
-# there are some things not optimised in the code for example not using the right data structures or many parts of the code repeating itself, at some place db calls can be avoided by usilising the flask sessions module and multiple other things
-# if you actually want to scale this project you will have to make some changes, Again there's inherently nothing wrong with the project everything works fantastic just that when you wanna scale beyond a certain point you will have to make some changes
-
+# Setup Cloudinary
 cloudinary.config(
-  cloud_name = "",
-  api_key = "",
-  api_secret = ""
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
+
+editor_collection = db['editorData']
 
 @app.route("/fetchUsersWorkspaces", methods=["POST"])
 def fetchUsersWorkspaces():
