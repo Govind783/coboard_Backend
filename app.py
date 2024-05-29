@@ -93,7 +93,7 @@ def fetchUsersWorkspaces():
         except Exception as error:
             # there was no user with the given sub
             logging.error(f"execption bllack operation failed: {error}")
-            return jsonify({"message": "FAILURE", "status": 400})
+            return jsonify({"message": "FAILURE", "status": 400}), 400
         # return 'govind'
 
 
