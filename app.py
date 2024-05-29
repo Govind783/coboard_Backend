@@ -1680,4 +1680,4 @@ def handle_disconnect():
         logging.warning(f"Session {session_id} disconnected but no matching user_id found")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
