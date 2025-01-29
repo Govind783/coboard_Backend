@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-logging.basicConfig(filename="backendPYLogs.log", level=logging.info)
+logging.basicConfig(filename="backendPYLogs.log", level=logging.INFO)
 app = Flask(__name__)
 cors_origins = os.getenv('CORS_ORIGINS').split(',')
 CORS(app, origins=cors_origins)
