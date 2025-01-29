@@ -16,7 +16,15 @@ jobs:
         SSH_PASS: ${{ secrets.ROOT_PASSWORD }}
       run: |
         sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no root@139.59.59.184 '
-        cd /opt/coboard &&
+        cd /opt &&
+        if [ ! -d "coboard" ]; then
+          mkdir coboard
+        fi &&
+        cd coboard &&
+        if [ ! -d ".git" ]; then
+          git init &&
+          git remote add origin https://github.com/Govind783/coboard_Backend.git
+        fi &&
         git fetch origin &&
         git reset --hard origin/main &&
         python3 -m venv venv &&
