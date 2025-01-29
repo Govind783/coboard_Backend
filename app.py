@@ -1,16 +1,15 @@
 import datetime
 from flask_cors import CORS
-from flask import Flask, jsonify, redirect, request, Response, send_from_directory, session
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
-from flask_pymongo import PyMongo
-from werkzeug.security import generate_password_hash, check_password_hash
-import json
+# from werkzeug.security import generate_password_hash, check_password_hash
+# import json
 import uuid
-from bson import ObjectId
+# from bson import ObjectId
 from datetime import datetime, timedelta
 import logging
 # from delteBoardemailConfirmation import send_mailForDeletinBoardHandler
-from flask_mail import Mail, Message
+# from flask_mail import Mail, Message
 from flask_socketio import SocketIO
 from flask_socketio import join_room
 from flask_socketio import leave_room
@@ -21,15 +20,15 @@ from flask_socketio import emit
 from pymongo import UpdateOne
 import threading
 import time
-from werkzeug.utils import secure_filename
+# from werkzeug.utils import secure_filename
 import cloudinary
 from cloudinary.uploader import upload
-from cloudinary.utils import cloudinary_url
+# from cloudinary.utils import cloudinary_url
 from dotenv import load_dotenv
 import os
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-logging.basicConfig(filename="backendPYLogs.log", level=logging.INFO)
+logging.basicConfig(filename="backendPYLogs.log", level=logging.info)
 app = Flask(__name__)
 cors_origins = os.getenv('CORS_ORIGINS').split(',')
 CORS(app, origins=cors_origins)
@@ -41,7 +40,7 @@ client = MongoClient(mongo_uri)
 db = client[os.getenv('MONGO_DB_NAME')]
 
 # Setup Flask-Mail
-mail = Mail(app)
+# mail = Mail(app)
 
 # Setup Flask-SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -65,7 +64,7 @@ def fetchUsersWorkspaces():
                 return jsonify({"message": f"{item} was missing", "status": 400})
         try:
             foundUser = db["miroUsers"].find_one({"sub": data["sub"]})
-            logging.info(f"Found user for fetch user workspaces: {foundUser}")
+            #logging.info(f"Found user for fetch user workspaces: {foundUser}")
             if foundUser:
                 foundUser["_id"] = str(foundUser["_id"])
                 for workspace in foundUser["workspace_details"]:
@@ -221,7 +220,7 @@ def createEitherWorkspaceOR_Board():
 @app.route("/fetchTeamMembers", methods=["POST"])
 def handle_fetching_team_members():
     data = request.get_json()
-    logging.info(data)
+    # #logging.info(data)
     if not data.get("board_uuid"):
         return jsonify({"error": "Board UUID missing"}), 400
 
@@ -235,7 +234,7 @@ def handle_fetching_team_members():
             for board in workspace["userBoards"]:
                 if board.get("sharedBoard_id"):
                     try:
-                        logging.info(f"DB calling check: {data['board_uuid']}")
+                        # #logging.info(f"DB calling check: {data['board_uuid']}")
                         membersOfSharedBoard = db["sharedBoards"].find_one(
                             {"board_uuid": data["board_uuid"]}
                         )["membersWithMutuallySharedBoards"]
@@ -261,7 +260,7 @@ def handle_fetching_team_members():
     #     if not result:
     #         return jsonify({"error": "Board not found"}), 404
     #     else:
-    #         logging.info(result, "result")
+    #         #logging.info(result, "result")
     #         return jsonify(result["membersWithMutuallySharedBoards"]), 200
 
     # except Exception as err:
@@ -393,12 +392,12 @@ def validateInviteProcess():
 @app.route("/AcceptInviedUser", methods=["POST"])
 def acceptInvitedUser():
     data = request.get_json()
-    logging.info(f"Request data: {data}")
+    #logging.info(f"Request data: {data}")
 
     userIdForTheCurrentUser = uuid.uuid4().hex
     try:
         userThatInvited = db["miroUsers"].find_one({"user_id": data["inviters_Uuid"]})
-        logging.info(f"Inviter user: {userThatInvited}")
+        #logging.info(f"Inviter user: {userThatInvited}")
     except Exception as err:
         logging.error(f"Database error: {err}")
 
@@ -428,12 +427,6 @@ def acceptInvitedUser():
                         )
 
                         if userIsAlreadyPartOfTheBoard:
-                            logging.info(
-                                f"board existsssssssssssssssssssssssss {boardExitsInSharedCollection}"
-                            )
-                            logging.info(
-                                f"Userrrrrrrrrrrrrrr is already part of the board: {userIsAlreadyPartOfTheBoard}"
-                            )
                             return {"message": "User is already part of the board"}, 400
                     except Exception as err:
                         logging.error(
@@ -516,7 +509,7 @@ def acceptInvitedUser():
             )
             shared_board_id = None
             if boardIsAlreadyMutuallShared:
-                logging.info("Board already exists in shared collection")
+                # #logging.info("Board already exists in shared collection")
                 try:
                     db["sharedBoards"].update_one(
                         {"board_uuid": data["soucre_uuid"]},
@@ -559,16 +552,13 @@ def acceptInvitedUser():
                 if inviteeAlreadyExists:
                     modifiedBoardObject["sharedBoard_id"] = shared_board_id
                     workspaceExists = False  # Flag to track if the workspace exists
-                    logging.info(f"Invitee already exists: {inviteeAlreadyExists}")
 
                     # Iterate over the existing workspace_details to check if current workspace exists
                     for workspace in inviteeAlreadyExists["workspace_details"]:
                         if workspace["workspace_uuid"] == data["workspace_uuid"]:
-                            logging.info("Workspace exists matcheeeeeeeeeeeee")
                             # If workspace exists, update it with the new board and set flag to True
                             workspaceExists = True
                             try:
-                                logging.info("DB call to update board")
                                 # updating the invitee
                                 db["miroUsers"].update_one(
                                     {"user_id": inviteeAlreadyExists["user_id"]},
@@ -613,7 +603,7 @@ def acceptInvitedUser():
                         # If the workspace does not exist, then add it as a new workspace
 
                         try:
-                            logging.info("DB call to insert new workspace with board")
+                            #logging.info("DB call to insert new workspace with board")
                             # updating the invitee
                             db["miroUsers"].update_one(
                                 {"user_id": inviteeAlreadyExists["user_id"]},
@@ -646,9 +636,6 @@ def acceptInvitedUser():
                 else:
                     # updating the invitee i.e inserting his entry
                     modifiedBoardObject["sharedBoard_id"] = shared_board_id
-                    logging.info(
-                        f"Inviteeeeeeeeeeeeeeee does not exist final board was {modifiedBoardObject}"
-                    )
                     try:
                         db["miroUsers"].insert_one(data)
                     except Exception as err:
@@ -666,7 +653,7 @@ def acceptInvitedUser():
                             }
                         )
                     else:
-                        logging.info("Users with mututla boardssssssss")
+                        #logging.info("Users with mututla boardssssssss")
                         # code is just repeating itself make a function for this 2
                         usersWithMutualBoards = db["miroUsers"].find(
                             {
@@ -677,9 +664,7 @@ def acceptInvitedUser():
                         )
                     # updating the inviter no need to loop
 
-                    logging.info(
-                        f"Upding the inviter, invitee did not exist: {shared_board_id}"
-                    )
+                    
                     db["miroUsers"].update_one(
                         {"user_id": data["inviters_Uuid"]},
                         {
@@ -705,7 +690,7 @@ def acceptInvitedUser():
 @app.route("/starOrUnStarBoard", methods=["POST"])
 def starOrUnStarBoard():
     data = request.get_json()
-    logging.info(f"data of frontend for starring: {data}")
+    #logging.info(f"data of frontend for starring: {data}")
     if not data.get("board_uuid"):
         return jsonify({"error": "Board UUID missing"}), 400
 
@@ -715,7 +700,7 @@ def starOrUnStarBoard():
             {"workspace_details.userBoards.board_uuid": data["board_uuid"]}
         )
 
-        logging.info(f"Found board for star it: {specificBoard}")
+        #logging.info(f"Found board for star it: {specificBoard}")
         if not specificBoard:
             return jsonify({"error": "Board not found"}), 404
         else:
@@ -735,9 +720,6 @@ def starOrUnStarBoard():
                             {
                                 "$addToSet": {"starredBoards": data["board_uuid"]},
                             },
-                        )
-                        logging.info(
-                            f"added to array of starred: {data['board_uuid']} and the workspace is {data['workspace_uuid']}"
                         )
                         db["miroUsers"].update_one(
                             {
@@ -765,9 +747,6 @@ def starOrUnStarBoard():
                             ],
                         )
 
-                        logging.info(
-                            f"mutated is starred: {data['board_uuid']} and the workspace is {data['workspace_uuid']}"
-                        )
 
                         return jsonify({"message": "Board starred successfully"}), 200
                     except Exception as err:
@@ -818,7 +797,7 @@ def starOrUnStarBoard():
 @app.route("/fetchFavouriteBoards", methods=["POST"])
 def fetchFavouriteBoards():
     data = request.get_json()
-    logging.info(f"Data for fetching favourite boards: {data}")
+    #logging.info(f"Data for fetching favourite boards: {data}")
     if not data.get("user_id"):
         return jsonify({"error": "User ID missing"}), 400
 
@@ -826,11 +805,9 @@ def fetchFavouriteBoards():
     if not user:
         return jsonify({"error": "User not found"}), 404
     else:
-        logging.info(
-            f"User found for fetching favourite boards11111111111111111111: {user}"
-        )
+        
         user["_id"] = str(user["_id"])
-        logging.info(f"User found for fetching favourite boards: {user}")
+        #logging.info(f"User found for fetching favourite boards: {user}")
         # return jsonify({"data": user["starredBoards"]}), 200
         try:
             FavouritesboardsData = []
@@ -838,11 +815,8 @@ def fetchFavouriteBoards():
             for workspace in user["workspace_details"]:
                 for board in workspace["userBoards"]:
                     if board["board_uuid"] in usersStarredBoards:
-                        logging.info(
-                            f"Board found for fetching favourite boards: {board}"
-                        )
                         if "sharedBoard_id" in board:
-                            logging.info(f"wtf boards: {board}")
+                            #logging.info(f"wtf boards: {board}")
                             board["sharedBoard_id"] = str(board["sharedBoard_id"])
                         FavouritesboardsData.append(board)
             return jsonify({"data": FavouritesboardsData}), 200
@@ -854,7 +828,7 @@ def fetchFavouriteBoards():
 @app.route("/removeMemberFromBoard", methods=["POST"])
 def removeMemberFromBoard():
     data = request.get_json()
-    logging.info(f"Data for removing member from board: {data}")
+    #logging.info(f"Data for removing member from board: {data}")
     if (
         not data.get("board_uuid")
         or not data.get("user_id")
@@ -876,9 +850,6 @@ def removeMemberFromBoard():
         boardFromWhichUserISGettingRemoved = db["sharedBoards"].find_one(
             {"board_uuid": data["board_uuid"]}
         )
-        logging.info(
-            f"Board from which user is getting removed: {boardFromWhichUserISGettingRemoved}"
-        )
 
     except Exception as err:
         logging.error(f"Database error for finding board: {err}")
@@ -893,9 +864,6 @@ def removeMemberFromBoard():
             return jsonify({"error": "User that is removing not found"}), 404
         else:
             userThatISRemoving["_id"] = str(userThatISRemoving["_id"])
-            logging.info(
-                f"User that is removing**************************: {userThatISRemoving}"
-            )
             # userThatIsGettingRemoved['membersWithMutuallySharedBoards'].find({"user_id": data["user_id"]})
             # Inside the loop
             for user in userThatISRemoving["membersWithMutuallySharedBoards"]:
@@ -911,9 +879,6 @@ def removeMemberFromBoard():
                                         }
                                     }
                                 },
-                            )
-                            logging.info(
-                                "Member removed from array of shared collection:"
                             )
                         except Exception as err:
                             logging.error(
@@ -945,7 +910,7 @@ def removeMemberFromBoard():
                 array_filters=[{"elem.userBoards.board_uuid": data.get("board_uuid")}],
             )
 
-            logging.info("Member removed from array of user collection:")
+            #logging.info("Member removed from array of user collection:")
             return jsonify({"message": "Member removed successfully"}), 200
         except Exception as err:
             logging.error(f"Database error for removing member from board: {err}")
@@ -970,22 +935,22 @@ def deleteBoardWrapper():
     isSharred = data.get('isShared')
     user = None
     board = None
-    logging.info(f"is sharred variable {isSharred}")
+    #logging.info(f"is sharred variable {isSharred}")
 
     try:
         if isSharred is None: 
-            logging.info(f"in if block {isSharred}")
+            #logging.info(f"in if block {isSharred}")
             specificBoard = None
             specificBoard =  db["sharedBoards"].find_one({"board_uuid": board_uuid})
             if not specificBoard:
-                logging.info(f"Board not found in shared collection: {specificBoard}")
+                #logging.info(f"Board not found in shared collection: {specificBoard}")
                 # return jsonify({"error": "Board not found"}), 404
                 specificBoard = db["miroUsers"].find_one({"workspace_details.userBoards.board_uuid": board_uuid})
                 if not specificBoard:
-                    logging.info(f"Board not found in user collection: {specificBoard}")
+                    #logging.info(f"Board not found in user collection: {specificBoard}")
                     return jsonify({"error": "Board not found"}), 404
                 else:
-                    logging.info(f"Board found in user collection: {specificBoard}")
+                    #logging.info(f"Board found in user collection: {specificBoard}")
                     #pull the board out from the array of userBoards
                     try:
                         db["miroUsers"].update_one(
@@ -1002,9 +967,6 @@ def deleteBoardWrapper():
                         boardISStarred = db["miroUsers"].find_one(
                             {"starredBoards": board_uuid}
                         )
-                        logging.info(
-                            f"Board is starred pre ifffff: {boardISStarred}"
-                        )
                         if boardISStarred:
                             db["miroUsers"].update_one(
                                 {"starredBoards": board_uuid},
@@ -1015,7 +977,7 @@ def deleteBoardWrapper():
                                 },
                             )
 
-                        logging.info("Board deleted successfully")
+                        #logging.info("Board deleted successfully")
                         return (
                             jsonify(
                                 {
@@ -1038,15 +1000,15 @@ def deleteBoardWrapper():
                     foundUserInSharedCollection = db["sharedBoards"].find_one(
                         {"membersWithMutuallySharedBoards.user_id": user_id}
                     )
-                    logging.info(f"Array of members: {foundUserInSharedCollection}")
+                    #logging.info(f"Array of members: {foundUserInSharedCollection}")
                     if not foundUserInSharedCollection:
                         return jsonify({"error": "User not found"}), 404
                     else:
                         for user in foundUserInSharedCollection["membersWithMutuallySharedBoards"]:
                             if user["user_id"] == user_id:
-                                logging.info(f"User found in shared collection: {user}")
+                                #logging.info(f"User found in shared collection: {user}")
                                 if user["role"] == "master_admin":
-                                    logging.info("Master admin found")
+                                    #logging.info("Master admin found")
                                     try:
                                         db["sharedBoards"].delete_one({"board_uuid": board_uuid})
 
@@ -1062,7 +1024,7 @@ def deleteBoardWrapper():
                                                 }
                                             },
                                         )
-                                        logging.info("Board deleted successfully")
+                                        #logging.info("Board deleted successfully")
                                         return jsonify({"message": "Board deleted successfully"}), 200
                                     except Exception as err:
                                         logging.error(f"Database error for deleting board: {err}")
@@ -1073,7 +1035,7 @@ def deleteBoardWrapper():
                     logging.error(f"Database error for deleting board: {err}")
                     return jsonify({"error": "Internal server error for deleting board"}), 500
         if isSharred == "false":
-            logging.info("in if block")
+            #logging.info("in if block")
             try:
                 user = db["miroUsers"].find_one({"user_id": user_id})
                 if not user:
@@ -1082,7 +1044,7 @@ def deleteBoardWrapper():
                     board = db["miroUsers"].find_one(
                         {"workspace_details.userBoards.board_uuid": board_uuid}
                     )
-                    logging.info(f"Board found for deleting: {board}")
+                    #logging.info(f"Board found for deleting: {board}")
 
                     if not board:
                         return jsonify({"error": "Board not found"}), 404
@@ -1106,9 +1068,6 @@ def deleteBoardWrapper():
                                         boardISStarred = db["miroUsers"].find_one(
                                             {"starredBoards": board_uuid}
                                         )
-                                        logging.info(
-                                            f"Board is starred pre ifffff: {boardISStarred}"
-                                        )
                                         if boardISStarred:
                                             db["miroUsers"].update_one(
                                                 {"starredBoards": board_uuid},
@@ -1119,7 +1078,7 @@ def deleteBoardWrapper():
                                                 },
                                             )
 
-                                        logging.info("Board deleted successfully")
+                                        #logging.info("Board deleted successfully")
                                         return (
                                             jsonify(
                                                 {
@@ -1144,7 +1103,7 @@ def deleteBoardWrapper():
                 return jsonify({"error": "Internal server error"}), 500
 
         else:
-            logging.info("in else block")
+            #logging.info("in else block")
             try:
                 board = db["sharedBoards"].find_one({"board_uuid": board_uuid})
                 if not board:
@@ -1154,7 +1113,7 @@ def deleteBoardWrapper():
                         foundUserInSharedCollection = db["sharedBoards"].find_one(
                             {"membersWithMutuallySharedBoards.user_id": user_id}
                         )
-                        logging.info(f"Array of members: {foundUserInSharedCollection}")
+                        #logging.info(f"Array of members: {foundUserInSharedCollection}")
                         if not foundUserInSharedCollection:
                             return jsonify({"error": "User not found"}), 404
                         else:
@@ -1163,11 +1122,8 @@ def deleteBoardWrapper():
                                 "membersWithMutuallySharedBoards"
                             ]:
                                 if user["user_id"] == user_id:
-                                    logging.info(
-                                        f"User found in shared collection: {user}"
-                                    )
                                     if user["role"] == "master_admin":
-                                        logging.info("Master admin found")
+                                        #logging.info("Master admin found")
                                         try:
                                             db["sharedBoards"].delete_one(
                                                 {"board_uuid": board_uuid}
@@ -1193,9 +1149,6 @@ def deleteBoardWrapper():
                                             boardISStarred = db["miroUsers"].find_one(
                                                 {"starredBoards": board_uuid}
                                             )
-                                            logging.info(
-                                                f"Board is starred: {boardISStarred}"
-                                            )
                                             if boardISStarred:
                                                 db["miroUsers"].update_one(
                                                     {"starredBoards": board_uuid},
@@ -1206,7 +1159,7 @@ def deleteBoardWrapper():
                                                     },
                                                 )
 
-                                            logging.info("Board deleted successfully")
+                                            #logging.info("Board deleted successfully")
                                             return (
                                                 jsonify(
                                                     {
@@ -1237,7 +1190,7 @@ def deleteBoardWrapper():
                                             400,
                                         )
                         db["sharedBoards"].delete_one({"board_uuid": board_uuid})
-                        logging.info("Board deleted successfully")
+                        #logging.info("Board deleted successfully")
                         return jsonify({"message": "Board deleted successfully"}), 200
                     except Exception as err:
                         logging.error(f"Database error for deleting board: {err}")
@@ -1261,12 +1214,12 @@ def deleteBoardWrapper():
 @app.route("/retrieveCanvasState", methods=["POST"])
 def retrieveCanvasState():
     data = request.get_json()
-    logging.info(f"Data for retrieving canvas state: {data}")
+    #logging.info(f"Data for retrieving canvas state: {data}")
     if not data.get("board_uuid"):
         return jsonify({"error": "Board UUID missing"}), 400
     try:
         board = db["shapes"].find({"boardId": data["board_uuid"]})
-        logging.info(f"Board found for retrieving canvas state: {board}")
+        #logging.info(f"Board found for retrieving canvas state: {board}")
         if not board:
             return jsonify({"error": "Board not found"}), 404
         else:
@@ -1282,7 +1235,7 @@ def retrieveCanvasState():
 
 @app.route('/uploadImageForEditor', methods=['POST'])
 def upload_image():
-    logging.info(f'Incoming files: {request.files}')
+    #logging.info(f'Incoming files: {request.files}')
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
 
@@ -1301,7 +1254,7 @@ def upload_image():
 @app.route("/retrieveTeamMembers", methods=['post'])
 def fetchingTeamMembersHandler():
     data = request.get_json()
-    logging.info(f"Data for fetching team members: {data}")
+    #logging.info(f"Data for fetching team members: {data}")
     if not data.get("board_uuid"):
         return jsonify({"error": "Board UUID missing"}), 400
     try:
@@ -1309,7 +1262,7 @@ def fetchingTeamMembersHandler():
        if not board:
         return jsonify({"error": "Board not found"}), 404
        else:
-           logging.info(f'memmbersssss {board["membersWithMutuallySharedBoards"]}')
+           #logging.info(f'memmbersssss {board["membersWithMutuallySharedBoards"]}')
            if(len(board["membersWithMutuallySharedBoards"]) > 0):
                return jsonify({"data": board["membersWithMutuallySharedBoards"]}), 200
            else:
@@ -1336,7 +1289,7 @@ def handle_join_board(data):
     boardUuid = data['boardUuid']
     room = f"CanvasState-{boardUuid}"
     join_room(room)
-    logging.info(f"Client joined room: {room}")
+    #logging.info(f"Client joined room: {room}")
 
 
 unique_shape_ids = set()
@@ -1351,7 +1304,7 @@ def handle_add_shape(data):
     shape_id = data['shapes']['id']
     # boardUuid = data['boardUuid']
     room = f"CanvasState-{data['boardId']}"
-    logging.info(f"Shape added: {data['shapes']}")
+    #logging.info(f"Shape added: {data['shapes']}")
 
     if shape_id not in unique_shape_ids:
         unique_shape_ids.add(shape_id)
@@ -1364,18 +1317,16 @@ def handle_add_shape(data):
             'boardId': data['boardId']
         }
         tempShapesInMemory.append(jsonForDb)
-        logging.info(f"Shapes in memory: {tempShapesInMemory}")
+        #logging.info(f"Shapes in memory: {tempShapesInMemory}")
 
         if len(tempShapesInMemory) > 3:
             try:
                 db['shapes'].insert_many(tempShapesInMemory)
                 tempShapesInMemory = []
                 unique_shape_ids.clear()
-                logging.info("Shapes in memory cleared after db insertion.")
+                #logging.info("Shapes in memory cleared after db insertion.")
             except Exception as err:
                 logging.error(f"Database error while inserting shapes: {err}")
-    else:
-        logging.info("Duplicate shape received and ignored.")
 
 
 @socketio.on("updateShape")
@@ -1383,14 +1334,13 @@ def handle_update_shape(data):
     global tempShapesInMemoryForUpdate
     shape_id = data['shapes']['id']
     room = f"CanvasState-{data['boardId']}"
-    logging.info(f"Shape updated: {data['shapes']}")
 
     # Find if there's already an update pending for this shape in memory.
     existing_update_index = next((i for i, entry in enumerate(tempShapesInMemoryForUpdate) if entry['shapes']['id'] == shape_id), -1)
 
     if existing_update_index == -1:
         # If no pending update, append to the list.
-        logging.info(f"Shape update queued: {data['shapes']}")
+        #logging.info(f"Shape update queued: {data['shapes']}")
         tempShapesInMemoryForUpdate.append({
             "shapes": data['shapes'],
             'userId': data['userId'],
@@ -1398,14 +1348,11 @@ def handle_update_shape(data):
         })
     else:
         # If there's already a pending update, replace it.
-        logging.info(f"Shape update replaced in queue: {data['shapes']}")
         tempShapesInMemoryForUpdate[existing_update_index] = {
             "shapes": data['shapes'],
             'userId': data['userId'],
             'boardId': data['boardId']
         }
-
-    logging.info(f"Shapes in update queue: {tempShapesInMemoryForUpdate}")
 
     # Process updates in batch or based on some condition, e.g., every few seconds or when the list size reaches a limit.
     if len(tempShapesInMemoryForUpdate) > 3:
@@ -1418,7 +1365,6 @@ def handle_update_shape(data):
                 ) for shape in tempShapesInMemoryForUpdate
             ])
             tempShapesInMemoryForUpdate = []
-            logging.info("Shapes in memory cleared after db update.")
         except Exception as err:
             logging.error(f"Database error while updating shapes111111111: {err}")
 
@@ -1428,7 +1374,7 @@ def handle_update_shape(data):
 @socketio.on("deleteShape")
 def handle_delete_shape(data):
     global delete_queue
-    logging.info(f"Shape deleted: {data}")
+    #logging.info(f"Shape deleted: {data}")
     room = f"CanvasState-{data['boardId']}"
 
     delete_queue.append(data['shapes']['id'])
@@ -1448,38 +1394,38 @@ def flush_delete_queue():
 
     try:
         db['shapes'].delete_many({"shapes.id": {"$in": delete_queue}})
-        logging.info(f"Deleted {len(delete_queue)} shapes from database.")
+        #logging.info(f"Deleted {len(delete_queue)} shapes from database.")
         delete_queue = []  # Clear the queue after processing
     except Exception as err:
         logging.error(f"Database error while deleting shapes: {err}")
 
 # @socketio.on("cursorMove")
 # def handle_cursor_move(data):
-#     logging.info(f'cursor data {data}')
+#     #logging.info(f'cursor data {data}')
 #     emit("cursorMoved", data, broadcast=True, include_self=True)
 
 def perdoicDbUpdate():
     global user_sessions, tempShapesInMemory, tempShapesInMemoryForUpdate, delete_queue
     while True:
-            # logging.info("Periodic DB update started")
+            # #logging.info("Periodic DB update started")
             
             # Check for active user sessions
             if not user_sessions:
-                # logging.info("No user sessions found")
+                # #logging.info("No user sessions found")
                 time.sleep(5)  
                 continue 
             
             if tempShapesInMemory:
-                logging.info('Periodic DB update for adding shapes')
+                #logging.info('Periodic DB update for adding shapes')
                 try:
                     db["shapes"].insert_many(tempShapesInMemory)
                     tempShapesInMemory = []
-                    logging.info("Shapes in memory cleared after db insertion.")
+                    #logging.info("Shapes in memory cleared after db insertion.")
                 except Exception as err:
                     logging.error(f"Database error while inserting shapes: {err}")
             
             if tempShapesInMemoryForUpdate:
-                logging.info('Periodic DB update for updating shapes')
+                #logging.info('Periodic DB update for updating shapes')
                 try:
                     db["shapes"].bulk_write([
                         UpdateOne(
@@ -1489,7 +1435,7 @@ def perdoicDbUpdate():
                         ) for shape in tempShapesInMemoryForUpdate
                     ])
                     tempShapesInMemoryForUpdate = []
-                    logging.info("Shapes in memory cleared after db update.")
+                    #logging.info("Shapes in memory cleared after db update.")
                 except Exception as err:
                     logging.error(f"Database error while updating shapes222222: {err}")
 
@@ -1508,7 +1454,7 @@ buffer_lock = threading.Lock()
 UPDATE_INTERVAL = 10
 @socketio.on("editorUpdate")
 def handleEditorUpdated(data):
-    logging.info(f"Editor updated: {data}")
+    #logging.info(f"Editor updated: {data}")
     room = f"CanvasState-{data['board_uuid']}"
     with buffer_lock:
         if data['board_uuid'] not in update_buffer:
@@ -1521,10 +1467,10 @@ def handleEditorUpdated(data):
 @app.route("/retrieveEditorData", methods=['POST'])
 def handleRetrieveEditorData():
     board_uuid = request.get_json().get("board_uuid")
-    logging.info(f"Retrieving editor data for board: {board_uuid}")
+    #logging.info(f"Retrieving editor data for board: {board_uuid}")
     try:
         editor_data = db["editorData"].find({"board_uuid": board_uuid})
-        logging.info(f"Editor data found: {editor_data}")
+        #logging.info(f"Editor data found: {editor_data}")
         if not editor_data:
             return jsonify({"error": "Editor data not found"}), 404
         arrayOfEditorData = []
@@ -1532,7 +1478,7 @@ def handleRetrieveEditorData():
 
             data["_id"] = str(data["_id"])
             arrayOfEditorData.append(data)
-        logging.info(f"Array of editor data: {arrayOfEditorData}")
+        #logging.info(f"Array of editor data: {arrayOfEditorData}")
         return jsonify({"data": arrayOfEditorData}), 200
     except Exception as err:
         logging.error(f"Database error for retrieving editor data: {err}")
@@ -1544,32 +1490,32 @@ def handleRetrieveEditorData():
 
 @socketio.on("editorCleared")
 def handleEditorCleared(data):
-    logging.info(f"Editor cleared: {data}")
+    #logging.info(f"Editor cleared: {data}")
     room = f"CanvasState-{data['board_uuid']}"
     with buffer_lock:
         update_buffer[data['board_uuid']] = []
         try:
             editor_collection.delete_many({"board_uuid": data['board_uuid']})
-            logging.info(f"Editor data cleared for board: {data['board_uuid']}")
+            #logging.info(f"Editor data cleared for board: {data['board_uuid']}")
         except Exception as err:
             logging.error(f"Database error while clearing editor data: {err}")
     emit('ClearedEditor', data, room=room, include_self=False)
 
 @socketio.on("imageDeleted")
 def handleRemoveImage(data):
-    logging.info(f"Image deleted: {data}")
+    #logging.info(f"Image deleted: {data}")
     emit('deletedImage', data, broadcast=True, include_self=False)
 
 
 def save_updates_to_db():
     while True:
         time.sleep(UPDATE_INTERVAL)
-        # logging.info(f"Periodic DB update started for editor data {update_buffer}")
+        # #logging.info(f"Periodic DB update started for editor data {update_buffer}")
         with buffer_lock:
             if update_buffer:
                 for board_uuid, updates in update_buffer.items():
                     for update in updates:
-                        logging.info(f"Saving update to DB: {update}")
+                        #logging.info(f"Saving update to DB: {update}")
                         query = {'id': update['editorData']['id'], 'board_uuid': board_uuid}
                         new_data = {
                             'id': update['editorData']['id'],
@@ -1583,7 +1529,7 @@ def save_updates_to_db():
                         editor_collection.update_one(query, {'$set': new_data}, upsert=True)
                 update_buffer.clear()
             # else:
-            #     logging.info("No updates to save to DB")
+            #     #logging.info("No updates to save to DB")
 
 # Start the background task
 threading.Thread(target=save_updates_to_db, daemon=True).start()
@@ -1599,9 +1545,9 @@ def make_call(data):
     userIds = data['userIds']
     room = f'testRoom {data["roomTokenString"]}'
     roomToken = data['roomTokenString']
-    logging.info(f"room token for the call: {roomToken}")
-    logging.info(f"caller id {data['calerId']}")
-    logging.info(f"Making call to users {userIds} in sesions object{user_sessions}")
+    #logging.info(f"room token for the call: {roomToken}")
+    #logging.info(f"caller id {data['calerId']}")
+    #logging.info(f"Making call to users {userIds} in sesions object{user_sessions}")
     callerid = data['calerId']
     for userId in userIds:
         if userId['id'] in user_sessions:
@@ -1615,7 +1561,7 @@ def make_call(data):
 def accept_call(data):
     user_id = data['userId']
     caller_id = data['caller_id']
-    logging.info(f"token when acceptiung from notification {data['roomTokenString']}")
+    #logging.info(f"token when acceptiung from notification {data['roomTokenString']}")
     roomToken = data['roomTokenString']
     room = f'finalRoom {roomToken}'
     
@@ -1643,8 +1589,8 @@ def handle_declinedCall(data):
         leave_room(f'testRoom {roomToken}', sid=user_sessions[user_id])
         leave_room(f'testRoom {roomToken}', sid=user_sessions[caller_id])
 
-    logging.info(f"User {user_id} declined to join room {room}")
-    logging.info(f"final state of rooms post leaving {rooms()}")
+    #logging.info(f"User {user_id} declined to join room {room}")
+    #logging.info(f"final state of rooms post leaving {rooms()}")
     # Handle any additional logic for declining the call, like notifying the caller
 
 
@@ -1658,9 +1604,17 @@ def handle_disconnect():
             break
     if user_id:
         del user_sessions[user_id]
-        logging.info(f"Client {user_id} disconnected and session {session_id} removed")
+        #logging.info(f"Client {user_id} disconnected and session {session_id} removed")
     else:
         logging.warning(f"Session {session_id} disconnected but no matching user_id found")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(
+        host=os.getenv('FLASK_HOST'),
+        port=int(os.getenv('FLASK_PORT')),
+        ssl_context=(
+            os.getenv('SSL_CERT_PATH'),
+            os.getenv('SSL_KEY_PATH')
+        ) if os.getenv('SSL_CERT_PATH') and os.getenv('SSL_KEY_PATH') else None,
+        debug=os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    )

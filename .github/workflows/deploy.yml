@@ -1,0 +1,28 @@
+name: Deploy Flask App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install sshpass
+      run: sudo apt-get install sshpass
+      
+    - name: Deploy to Digital Ocean
+      env:
+        SSH_PASS: ${{ secrets.ROOT_PASSWORD }}
+      run: |
+        sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no root@139.59.59.184 '
+        cd /opt/coboard &&
+        cp .env /tmp/.env.backup &&
+        rm -rf ./* &&
+        git clone https://github.com/Govind783/coboard_Backend.git . &&
+        mv /tmp/.env.backup .env &&
+        python3 -m venv venv &&
+        source venv/bin/activate &&
+        pip install -r req.txt &&
+        sudo systemctl restart flask
+        '
