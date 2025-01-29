@@ -17,10 +17,8 @@ jobs:
       run: |
         sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no root@139.59.59.184 '
         cd /opt/coboard &&
-        cp .env /tmp/.env.backup &&
-        rm -rf ./* &&
-        git clone https://github.com/Govind783/coboard_Backend.git . &&
-        mv /tmp/.env.backup .env &&
+        git fetch origin &&
+        git reset --hard origin/main &&
         python3 -m venv venv &&
         source venv/bin/activate &&
         pip install -r req.txt &&
