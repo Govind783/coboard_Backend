@@ -1302,32 +1302,35 @@ delete_queue = []
 def handle_add_shape(data):
     global tempShapesInMemory, unique_shape_ids
     shape_id = data['shapes']['id']
-    # boardUuid = data['boardUuid']
     room = f"CanvasState-{data['boardId']}"
-    #logging.info(f"Shape added: {data['shapes']}")
 
     if shape_id not in unique_shape_ids:
         unique_shape_ids.add(shape_id)
-        # join_room(room)
-        # emit("shapeAdded", data['shapes'], broadcast=True, include_self=False)
         emit("shapeAdded", data['shapes'], room=room, include_self=False)
         jsonForDb = {
             "shapes": data['shapes'],
             'userId': data['userId'],
             'boardId': data['boardId']
         }
+        # Remove _id if it exists to let MongoDB generate a new one
+        if '_id' in jsonForDb:
+            del jsonForDb['_id']
+            
         tempShapesInMemory.append(jsonForDb)
-        #logging.info(f"Shapes in memory: {tempShapesInMemory}")
 
         if len(tempShapesInMemory) > 3:
             try:
-                db['shapes'].insert_many(tempShapesInMemory)
+                # Use update_one with upsert instead of insert_many
+                for shape in tempShapesInMemory:
+                    db['shapes'].update_one(
+                        {"shapes.id": shape['shapes']['id']},
+                        {"$set": shape},
+                        upsert=True
+                    )
                 tempShapesInMemory = []
                 unique_shape_ids.clear()
-                #logging.info("Shapes in memory cleared after db insertion.")
             except Exception as err:
                 logging.error(f"Database error while inserting shapes: {err}")
-
 
 @socketio.on("updateShape")
 def handle_update_shape(data):
@@ -1407,41 +1410,37 @@ def flush_delete_queue():
 def perdoicDbUpdate():
     global user_sessions, tempShapesInMemory, tempShapesInMemoryForUpdate, delete_queue
     while True:
-            # #logging.info("Periodic DB update started")
-            
-            # Check for active user sessions
-            if not user_sessions:
-                # #logging.info("No user sessions found")
-                time.sleep(5)  
-                continue 
-            
-            if tempShapesInMemory:
-                #logging.info('Periodic DB update for adding shapes')
-                try:
-                    db["shapes"].insert_many(tempShapesInMemory)
-                    tempShapesInMemory = []
-                    #logging.info("Shapes in memory cleared after db insertion.")
-                except Exception as err:
-                    logging.error(f"Database error while inserting shapes: {err}")
-            
-            if tempShapesInMemoryForUpdate:
-                #logging.info('Periodic DB update for updating shapes')
-                try:
-                    db["shapes"].bulk_write([
-                        UpdateOne(
-                            {"id": shape['shapes']["id"]},
-                            {"$set": shape['shapes']},
-                            upsert=True
-                        ) for shape in tempShapesInMemoryForUpdate
-                    ])
-                    tempShapesInMemoryForUpdate = []
-                    #logging.info("Shapes in memory cleared after db update.")
-                except Exception as err:
-                    logging.error(f"Database error while updating shapes222222: {err}")
+        if not user_sessions:
+            time.sleep(5)
+            continue
 
-            flush_delete_queue()
-            
-            time.sleep(5) 
+        if tempShapesInMemory:
+            try:
+                # Use update_one with upsert instead of insert_many
+                for shape in tempShapesInMemory:
+                    db['shapes'].update_one(
+                        {"shapes.id": shape['shapes']['id']},
+                        {"$set": shape},
+                        upsert=True
+                    )
+                tempShapesInMemory = []
+            except Exception as err:
+                logging.error(f"Database error while inserting shapes: {err}")
+        
+        if tempShapesInMemoryForUpdate:
+            try:
+                for shape in tempShapesInMemoryForUpdate:
+                    db['shapes'].update_one(
+                        {"shapes.id": shape['shapes']['id']},
+                        {"$set": shape['shapes']},
+                        upsert=True
+                    )
+                tempShapesInMemoryForUpdate = []
+            except Exception as err:
+                logging.error(f"Database error while updating shapes: {err}")
+
+        flush_delete_queue()
+        time.sleep(5)
 
 thread = threading.Thread(target=perdoicDbUpdate)
 thread.start()
